@@ -1,19 +1,17 @@
 #include <iostream>
-#include <set>
+#include <map>
 #include <utility>
 
-class Student
+struct BusInfo
 {
-public:
-    Student() = default;
-    /*explicit*/ Student(int mark) : m_averageMark {mark} {}
-
-    int averageMark() const {
-        return m_averageMark;
-    }
-private:
-    int m_averageMark;
+    size_t number;
+    size_t fare;
 };
+
+std::ostream& operator<<(std::ostream& stream, const BusInfo& info) {
+    stream << "N: " << std::to_string(info.number) << " - F:" << std::to_string(info.fare);
+    return stream;
+}
 
 struct GreaterComparator
 {
@@ -23,162 +21,86 @@ struct GreaterComparator
     }
 };
 
-bool someCustomComparator(const int lhs, const int rhs)
+template<class K, class V, class C>
+void printMap(const std::map<K, V, C>& setToPrint)
 {
-    return lhs / 2 < rhs / 2;
-}
-
-template<class T, class C>
-void printSet(const std::set<T, C>& setToPrint)
-{
-    for (const T& entry : setToPrint) {
-        std::cout << entry << " ";
+    for (const std::pair<K, V>& entry : setToPrint) {
+        std::cout << "{" << entry.first << ", " << entry.second << "}" << " " << std::endl;
     }
     std::cout << std::endl;
-}
-
-void investigateLookupOperations(std::set<std::string>& busSchedule)
-{
-    std::cout << "Number of buses at 8:15: " << busSchedule.count("08:15") << std::endl; // returns 0 or 1
-    std::cout << "Number of buses at 8:00: " << busSchedule.count("08:00") << std::endl;
-
-    std::cout << std::endl;
-
-    auto targetBusTimeIt = busSchedule.find("11:50"); // returns end() iterator if no element found
-
-    if (targetBusTimeIt != busSchedule.end()) {
-        std::cout << "Target bus time found!" << std::endl;
-    } else {
-        std::cout << "No such bus for you..." << std::endl;
-    }
-
-    std::cout << std::endl;
-
-    auto nearestBus = busSchedule.lower_bound("09:40"); // lower bound finds the greater than or equal, returns iterator or end()
-    if (nearestBus != busSchedule.end()) {
-        std::cout << "Nearest bus will be at... " << *nearestBus << std::endl;
-    } else {
-        std::cout << "Sorry, wait for tomorrow!" << std::endl;
-    }
-
-    std::cout << std::endl;
-
-    auto nextBusAfter = busSchedule.upper_bound("09:40"); // greater than, but not equal; returns iterator or end()
-    if (nearestBus != busSchedule.end()) {
-        std::cout << "Next bus will be at... " << *nextBusAfter << std::endl;
-    } else {
-        std::cout << "Sorry, wait for tomorrow!" << std::endl;
-    }
-
-    std::cout << std::endl;
-
-    std::pair<std::set<std::string>::iterator,
-              std::set<std::string>::iterator> nearestAndNext = busSchedule.equal_range("09:30");
-    // returns pair of iterators (lower_bound, upper_bound)
-
-    if (nearestAndNext.first != busSchedule.begin()) {
-        std::cout << "Nearest bus 1: " << *(--nearestAndNext.first) << std::endl;
-    }
-    if (nearestAndNext.second != busSchedule.end()) {
-        std::cout << "Nearest bus 2: " << *nearestAndNext.second << std::endl;
-    }
-
-    std::cout << std::endl;
-}
-
-void investigateModifiers(std::set<std::string>& busSchedule)
-{
-    std::pair<std::set<std::string>::iterator,
-              bool> insertResult = busSchedule.insert("20:00"); // adds value if unique
-                                              /* or emplace */
-
-    if (insertResult.second) { // result of insertion
-        std::cout << *insertResult.first << " bus added! " << std::endl;
-    } else {
-        std::cout << *insertResult.first << " bus already exists!" << std::endl;
-    }
-    printSet(busSchedule);
-
-    std::cout << std::endl;
-
-    auto nearestBus = busSchedule.lower_bound("09:40");
-
-    // The trick is that lower_bound returns the iterator where the key would be if it were in the set,
-    // regardless of whether it actually is there.
-    busSchedule.emplace_hint(nearestBus, "10:00");
-    /* or busSchedule.insert(nearestBus, "10.00"); */
-    std::cout << "Emplaced with hint: " << std::endl;
-    printSet(busSchedule);
 }
 
 void investigateConstructors()
 {
-    std::set<int> marksSetFilled {1, 2, 3, 4, 5}; // by default, comparator is std::less (also <)
+    // <key type, value type, comparator>
+    std::map<int, int, GreaterComparator> marksGreaterMap {{0, 1},
+                                                           {20, 2},
+                                                           {40, 3},
+                                                           {60, 4},
+                                                           {80, 5}
+                                                          };
+    // try to use upper_bound/lower_bound for mapping marks from 0-100 to 1-5 degree
 
-    std::cout << "Marks set filled: " << std::endl;
-    printSet(marksSetFilled);
-
-    std::set<int> assigningSet {marksSetFilled.begin(),
-                                std::prev(marksSetFilled.end(), 2)}; // remind assigning constructor
-
-    std::cout << "Assigned set: " << std::endl;
-    printSet(assigningSet);
-
-    std::set<int, GreaterComparator> marksGreaterSet {1, 2, 3, 4, 5};
-
-    std::cout << "Marks greater set: " << std::endl;
-    printSet(marksGreaterSet);
-
-    auto customComparator = &someCustomComparator; // function or lambda
-    std::set<int, decltype(customComparator)> marksCustomSet {customComparator}; // decltype allows to deduce customComparator type
-    marksCustomSet = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
-
-    std::cout << "Some custom comparator via function:" << std::endl;
-    printSet(marksCustomSet);
-
-    auto markComparator = [](const Student& lhs, const Student& rhs) {
-        return lhs.averageMark() < rhs.averageMark();
-    };
-
-    // NOTE: Student's constructor is not marked explicit, so we can use such "dangery" syntax.
-    std::set<Student, decltype(markComparator)> studentsSet ({3, 5, 4}, markComparator);
-
-    std::cout << "Student's marks: " << std::endl;
-    for (const auto& student : studentsSet) {
-        std::cout << student.averageMark() << " ";
-    }
-    std::cout << std::endl;
+    std::cout << "Marks greater map: " << std::endl;
+    printMap(marksGreaterMap);
 }
 
-void investigateProperties()
+void investigateAccessOperations(std::map<std::string, BusInfo>& busSchedule)
 {
-    std::set<int> tryToNotUnique {1, 1, 2, 3, 5, 8, 13}; // Fibonacci numbers
-    std::cout << "Only unique elements are added: " << std::endl;
-    printSet(tryToNotUnique);
+    std::cout << "Bus number at 08:15: " << busSchedule["08:15"].number << std::endl; // [] returns reference to element with key
+
+    // if key is not found, {key, mapped_type {}} is inserted (default value)
+    // be careful with it!
+    std::cout << "Bus number at 08:20: " << busSchedule["08:20"].number << " ....OOPS!" << std::endl;
+    // replace it with correct version
+    printMap(busSchedule);
+
+    std::cout << "Bus number at 08:45: " << busSchedule.at("08:45").number << std::endl;
+
+    try {
+        std::cout << "Bus number at 08:50: " << busSchedule.at("08:50").number << std::endl;
+        std::cout << "Will never get here." << std::endl;
+    } catch (const std::out_of_range& exception) {
+        std::cout << "We can't find that bus for you, because exception was thrown at: "
+                  << exception.what() << std::endl;
+    }
+}
+
+void investigateModifiers(std::map<std::string, BusInfo> busSchedule)
+{
+    busSchedule.insert(std::make_pair("08:00", BusInfo{100, 100})); // too verbose
+    busSchedule.emplace("08:00", BusInfo {300, 300});
+    // insert/emplace with hint is also available
+
+    std::cout << "Map after insertion:" << std::endl;
+    printMap(busSchedule);
+
+    auto newBus = busSchedule.emplace("08:00", BusInfo {300, 20});
+    std::cout << "Map after double insertion:" << std::endl;
+    printMap(busSchedule);
+
+    if (!newBus.second) { // if such key was already presented in container
+        newBus.first->second.fare = 20; // (newBus.first) - part of newBus pair (iterator;bool),
+                                        // (->second) - value of pair (key, value)
+                                        // .fare - BusInfo member
+    }
 }
 
 int main()
 {
     investigateConstructors();
-    investigateProperties();
 
-    std::set<std::string> busSchedule {
-        "08:15",
-        "08:30",
-        "08:45",
-        "09:40",
-        "11:20",
-        "11:35",
-        "11:50"
+    std::map<std::string, BusInfo> busSchedule {
+        {"08:15", BusInfo {504, 50}},
+        {"08:30", BusInfo {505, 40}},
+        {"08:45", BusInfo {104, 50}},
+        {"09:40", BusInfo {105, 30}},
+        {"11:20", BusInfo {107, 10}},
+        {"11:35", BusInfo {108, 20}},
+        {"11:50", BusInfo {109, 30}}
     };
 
-
-    std::cout << std::endl << "Bus schedule: " << std::endl;
-    printSet(busSchedule);
-
-    std::cout << std::endl;
-
-    investigateLookupOperations(busSchedule);
+    investigateAccessOperations(busSchedule);
     investigateModifiers(busSchedule);
 
     return 0;
