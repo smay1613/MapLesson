@@ -33,11 +33,11 @@ void printMap(const std::map<K, V, C>& setToPrint)
 void investigateConstructors()
 {
     // <key type, value type, comparator>
-    std::map<int, int, GreaterComparator> marksGreaterMap {{0, 1},
-                                                           {20, 2},
-                                                           {40, 3},
-                                                           {60, 4},
-                                                           {80, 5}
+    std::map<int, int, GreaterComparator> marksGreaterMap {std::make_pair(20, 1),
+                                                           std::pair<int, int> (40, 2),
+                                                           {60, 3},
+                                                           {80, 4},
+                                                           {100, 5}
                                                           };
     // try to use upper_bound/lower_bound for mapping marks from 0-100 to 1-5 degree
 
@@ -75,11 +75,13 @@ void investigateModifiers(std::map<std::string, BusInfo> busSchedule)
     std::cout << "Map after insertion:" << std::endl;
     printMap(busSchedule);
 
-    auto newBus = busSchedule.emplace("08:00", BusInfo {300, 20});
+    auto newBus = busSchedule.emplace("08:00", BusInfo {300, 20}); // (iterator, bool)
     std::cout << "Map after double insertion:" << std::endl;
     printMap(busSchedule);
 
     if (!newBus.second) { // if such key was already presented in container
+        // we can modify it!
+        /* newBus.first->first = "11:20"; */ // as in std::set, we can't modify key.
         newBus.first->second.fare = 20; // (newBus.first) - part of newBus pair (iterator;bool),
                                         // (->second) - value of pair (key, value)
                                         // .fare - BusInfo member
@@ -91,8 +93,8 @@ int main()
     investigateConstructors();
 
     std::map<std::string, BusInfo> busSchedule {
-        {"08:15", BusInfo {504, 50}},
-        {"08:30", BusInfo {505, 40}},
+        {"08:15", {504, 50}},
+        {"08:30", {505, 40}},
         {"08:45", BusInfo {104, 50}},
         {"09:40", BusInfo {105, 30}},
         {"11:20", BusInfo {107, 10}},
